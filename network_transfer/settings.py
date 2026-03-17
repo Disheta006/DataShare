@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'core',
     'transfers',
     'users',
+    'django_ratelimit',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -131,3 +132,35 @@ STATICFILES_DIRS = [
     BASE_DIR/'theme'/'static',
 ]
 STATIC_ROOT = BASE_DIR/'staticfiles'
+
+AUTH_USER_MODEL = 'core.User'
+
+AUTH_PASSWORD_VALIDATORS = [
+
+{
+'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+},
+
+{
+'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+},
+
+{
+'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+},
+]
+
+SESSION_COOKIE_AGE = 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "ratelimit_cache_table",
+    }
+}
+RATELIMIT_USE_CACHE = "default"
+
+# Remove during deployment
+RATELIMIT_ENABLE = False
+SILENCED_SYSTEM_CHECKS = ["django_ratelimit.E003", "django_ratelimit.W001"]   

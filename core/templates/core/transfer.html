@@ -2,13 +2,25 @@
 {% load static %}
 
 {% block content %}
+<header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">📱</span>
+            <span class="text-xl font-bold text-blue-600">DataShare</span>
+        </div>
+        <nav class="hidden md:flex items-center space-x-8 text-gray-600 font-medium">
+            <a href="{% url 'home' %}" class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition">Home <i class="fa-solid fa-arrow-right-long"></i></a>
+        </nav>
+        <button id="menu_btn" class="md:hidden text-2xl text-black  "><i class="fa-solid fa-bars"></i></button>
+    </div>
+    <div id="mobile_menu" class="hidden md:hidden px-6 pb-4 space-y-3 bg-white">
+        <a href="{% url 'home' %}" class="block bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Home</a>
+    </div>
+</header>
 <div class="min-h-screen bg-gray-100 py-10 px-4">
     <div class="max-w-4xl mx-auto">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">New Transfer</h1>
-            <a href="{% url 'home' %}" class="text-sm text-black bg-white px-4 py-2 rounded-lg shadow hover:bg-gray-50 transition">
-                <i class="fa-solid fa-arrow-left-long"></i> Back to Home
-            </a>
         </div>
         <p class="text-gray-500 mb-8">Fill in the details below to complete your data transfer.</p>
 
@@ -29,10 +41,8 @@
                             <input type="text" name="sender_name" placeholder="John Doe" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
                         </div>
                     </div>
-                </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mt-4 mb-4">
                         <h2 class="text-lg font-semibold text-orange-600"><i class="fa-solid fa-circle text-orange-600 text-sm"></i> Receiver Information</h2>
                         <span class="text-xs text-black bg-gray-100 px-3 py-1 rounded-full">TO</span>
                     </div>
@@ -46,11 +56,9 @@
                             <input type="text" name="receiver_name" placeholder="Jane Smith" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-400 outline-none">
                         </div>
                     </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl shadow">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-orange-500"><i class="fa-solid fa-circle"></i> Data Amount</h2>
+                
+                    <div class="flex justify-between items-center mt-4 mb-4">
+                        <h2 class="text-lg font-semibold text-black-500"><i class="fa-solid fa-circle"></i> Data Amount</h2>
                         <span class="text-xs bg-gray-100 px-3 py-1 rounded-full">SELECT</span>
                     </div>
 
@@ -66,7 +74,7 @@
                 </div>
 
                 <div class="bg-gray-50 p-6 rounded-2xl shadow">
-                    <h2><i class="fa-solid fa-circle"></i> Transfer Summary</h2>
+                    <h2>Transfer Summary</h2>
                     <div class="space-y-2 text-sm text-gray-600">
                         <div class="flex justify-between">
                             <span>From</span>
@@ -89,4 +97,13 @@
 
     </div>
 </div>
+
+<!-- Menu btn -->
+ <script>
+    const btn = document.getElementById('menu_btn');
+    const menu = document.getElementById('mobile_menu');
+    btn.addEventListener('click',() => {
+        menu.classList.toggle('hidden');        
+    });
+</script>
 {% endblock %}

@@ -23,9 +23,9 @@ urlpatterns = [
     path('',home,name='home'),
     path('transfer/',transfer,name='transfer'),
     path('signup/',signup,name='signup'),
+    path("verify-code/", verify_code, name="verify_code"),
     path('login/',login,name='login'),
     path('forget_password/',forget_password,name='forget_password'),
-    path('verify_code',verify_code,name='verify_code'),
     path('reset_password',reset_password,name='reset_password'),
     path('support',support,name='support'),
 ]
