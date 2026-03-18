@@ -2,7 +2,8 @@ import random
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import OTPVerification
-from django.contrib.auth import login
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import authenticate
 from .models import OTPVerification, User
 from django_ratelimit.decorators import ratelimit
 
@@ -65,7 +66,6 @@ def verify_code(request):
 
     signup_data = request.session.get("signup_data")
 
-    # Prevent direct access without signup
     if not signup_data:
         messages.error(request, "Session expired. Please signup again.")
         return redirect("signup")
@@ -74,30 +74,30 @@ def verify_code(request):
 
     if request.method == "POST":
 
-        entered_otp = request.POST.get("otp")
+        entered_otp = request.POST.get("otp").strip()
 
-        # Limit OTP attempts
-        attempts = request.session.get("otp_attempts", 0)
-
-        if attempts >= 5:
-            messages.error(request, "Too many OTP attempts. Please signup again.")
-            return redirect("signup")
-
-        request.session["otp_attempts"] = attempts + 1
+        otp_record = OTPVerification.objects.filter(mobile=mobile).last()
+        # Debugging
+        entered_otp = request.POST.get("otp").strip()
 
         otp_record = OTPVerification.objects.filter(mobile=mobile).last()
 
+        print("Entered OTP:", entered_otp)
+
+        # 🔴 Check if OTP exists
         if not otp_record:
             messages.error(request, "OTP not found. Please signup again.")
             return redirect("signup")
+        print("DB OTP:", otp_record.otp)
 
-        # Check OTP expiry
+        # 🔴 Check expiry
         if otp_record.is_expired():
-            messages.error(request, "OTP expired. Please signup again.")
+            messages.error(request, "OTP expired.")
+            otp_record.delete()
             return redirect("signup")
 
-        # OTP validation
-        if otp_record.otp == entered_otp:
+        # 🔴 Validate OTP
+        if str(otp_record.otp) == str(entered_otp):
 
             user = User.objects.create_user(
                 first_name=signup_data["first_name"],
@@ -106,33 +106,51 @@ def verify_code(request):
                 password=signup_data["password"]
             )
 
-            # Delete OTP after successful verification
+            # delete OTP after success
             otp_record.delete()
 
-            # Clear session data
+            # clear session
             request.session.pop("signup_data", None)
-            request.session.pop("otp_attempts", None)
 
-            # Login user
-            login(request, user)
+            auth_login(request, user)
 
             messages.success(request, "Account created successfully")
 
-            return redirect("home")
+            return redirect("login")
 
         else:
             messages.error(request, "Invalid OTP")
 
     return render(request, "core/verify_code.html")
 
+@ratelimit(key='ip', rate='5/m', block=True)
 def login(request):
-    return render(request,'core/login.html')
+    if request.method == "POST":
+
+        mobile = request.POST.get("mobile")
+        password = request.POST.get("password")
+
+        user = authenticate(request, mobile=mobile, password=password)
+
+        if user is not None:
+
+            auth_login(request, user)
+
+            # remember me logic
+            if request.POST.get("remember") != "on":
+                request.session.set_expiry(0)
+
+            messages.success(request, "Logged in successfully")
+
+            return redirect("transfer")
+
+        else:
+            messages.error(request, "Invalid mobile or password")
+
+    return render(request, "core/login.html")
 
 def forget_password(request):
     return render(request,'core/forget_password.html')
-
-def verify_code(request):
-    return render(request,'core/verify_code.html')
 
 def reset_password(request):
     return render(request,'core/reset_password.html')

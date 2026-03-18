@@ -42,7 +42,20 @@
                 <p class="text-sm text-gray-500 mb-6">Already have an account?
                     <a href="{% url 'login' %}" class="text-blue-600 font-medium hover:underline">Log in</a>
                 </p>
-            
+                {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-3 rounded-lg text-sm 
+                    {% if message.tags == 'error' %}
+                    bg-red-100 text-red-700
+                    {% elif message.tags == 'success' %}
+                    bg-green-100 text-green-700
+                    {% else %}
+                    bg-blue-100 text-blue-700
+                    {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+                {% endif %}
                 <form method="post" class="space-y-4">
                     {% csrf_token %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

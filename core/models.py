@@ -43,7 +43,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 class OTPVerification(models.Model):
 
     mobile = models.CharField(max_length=15)
-    otp = models.CharField(max_length=6)
     otp = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
 

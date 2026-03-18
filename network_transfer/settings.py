@@ -161,6 +161,10 @@ CACHES = {
 }
 RATELIMIT_USE_CACHE = "default"
 
+AUTHENTICATION_BACKENDS = [
+    "core.authentication.MobileBackend",
+]
+
 # Remove during deployment
 RATELIMIT_ENABLE = False
 SILENCED_SYSTEM_CHECKS = ["django_ratelimit.E003", "django_ratelimit.W001"]   
