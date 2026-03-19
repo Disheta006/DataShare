@@ -149,11 +149,125 @@ def login(request):
 
     return render(request, "core/login.html")
 
+@ratelimit(key='ip', rate='5/m', block=True)
 def forget_password(request):
-    return render(request,'core/forget_password.html')
+
+    if request.method == "POST":
+        mobile = request.POST.get("mobile").strip()
+
+        # Check if user exists
+        if not User.objects.filter(mobile=mobile).exists():
+            messages.error(request, "Mobile number not registered")
+            return redirect("forget_password")
+
+        # Delete old OTPs
+        OTPVerification.objects.filter(mobile=mobile).delete()
+
+        # Generate OTP
+        otp = str(random.randint(100000, 999999))
+
+        OTPVerification.objects.create(
+            mobile=mobile,
+            otp=otp
+        )
+
+        # Store session
+        request.session['reset_mobile'] = mobile
+        request.session['reset_otp_attempts'] = 0
+
+        print("RESET OTP:", otp)  # Replace with SMS API
+
+        return redirect("verify_reset_otp")
+
+    return render(request, "core/forget_password.html")
+
+def verify_reset_otp(request):
+
+    mobile = request.session.get("reset_mobile")
+
+    if not mobile:
+        messages.error(request, "Session expired. Try again.")
+        return redirect("forget_password")
+
+    if request.method == "POST":
+
+        entered_otp = request.POST.get("otp").strip()
+
+        otp_record = OTPVerification.objects.filter(mobile=mobile).last()
+
+        # 🔴 OTP not found
+        if not otp_record:
+            messages.error(request, "Invalid request. Try again.")
+            return redirect("forget_password")
+
+        # 🔴 Check expiry
+        if otp_record.is_expired():
+            otp_record.delete()
+            messages.error(request, "OTP expired")
+            return redirect("forget_password")
+
+        # 🔴 Attempt limiting
+        attempts = request.session.get("reset_otp_attempts", 0)
+
+        if attempts >= 5:
+            otp_record.delete()
+            messages.error(request, "Too many attempts. Try again.")
+            return redirect("forget_password")
+
+        # 🔴 Validate OTP
+        if str(otp_record.otp) == str(entered_otp):
+
+            # success → allow password reset
+            request.session['otp_verified'] = True
+
+            otp_record.delete()
+
+            return redirect("reset_password")
+
+        else:
+            request.session['reset_otp_attempts'] = attempts + 1
+            messages.error(request, "Invalid OTP")
+
+    return render(request, "core/verify_reset_otp.html")
 
 def reset_password(request):
-    return render(request,'core/reset_password.html')
+
+    mobile = request.session.get("reset_mobile")
+    otp_verified = request.session.get("otp_verified")
+
+    if not mobile or not otp_verified:
+        messages.error(request, "Unauthorized access")
+        return redirect("forget_password")
+
+    if request.method == "POST":
+
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match")
+            return redirect("reset_password")
+
+        try:
+            user = User.objects.get(mobile=mobile)
+        except User.DoesNotExist:
+            messages.error(request, "User not found")
+            return redirect("forget_password")
+
+        # 🔐 Set new password
+        user.set_password(password)
+        user.save()
+
+        # Clear session
+        request.session.pop("reset_mobile", None)
+        request.session.pop("otp_verified", None)
+        request.session.pop("reset_otp_attempts", None)
+
+        messages.success(request, "Password reset successful. Please login.")
+
+        return redirect("login")
+
+    return render(request, "core/reset_password.html")
 
 def support(request):
     return render(request,'core/support.html')
