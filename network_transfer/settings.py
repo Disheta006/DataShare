@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'theme',
     'core',
     'transfers',
-    'users',
     'django_ratelimit',
 ]
 

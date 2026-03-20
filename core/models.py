@@ -24,7 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-
+    data_balance = models.IntegerField(default=1000)  # in MB
     mobile = models.CharField(max_length=15, unique=True)
 
     is_active = models.BooleanField(default=True)

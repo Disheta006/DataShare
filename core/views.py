@@ -1,22 +1,19 @@
 import random
 from django.shortcuts import render, redirect
+from django.db import transaction
 from django.contrib import messages
 from .models import OTPVerification
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import authenticate
 from .models import OTPVerification, User
 from django_ratelimit.decorators import ratelimit
+from django.contrib.auth.decorators import login_required
+from transfers.models import Transfer
+from django.utils import timezone
 
 # Create your views here.
 def home(request):
     return render(request,'core/home.html')
-
-def transfer(request):
-    data_options = ["50MB", "100MB", "150MB", "200MB", "500MB", "1GB"]
-    context = {
-        'data_options': data_options
-    }
-    return render(request,'core/transfer.html', context)
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def signup(request):
@@ -142,7 +139,7 @@ def login(request):
 
             messages.success(request, "Logged in successfully")
 
-            return redirect("transfer")
+            return redirect("dashboard")
 
         else:
             messages.error(request, "Invalid mobile or password")
@@ -268,6 +265,22 @@ def reset_password(request):
         return redirect("login")
 
     return render(request, "core/reset_password.html")
+
+@login_required
+def dashboard(request):
+
+    user = request.user
+
+    sent = Transfer.objects.filter(sender=user).order_by('-created_at')[:5]
+    received = Transfer.objects.filter(receiver=user).order_by('-created_at')[:5]
+
+    context = {
+        "balance": user.data_balance,
+        "sent_transfers": sent,
+        "received_transfers": received,
+    }
+
+    return render(request, "core/dashboard.html", context)
 
 def support(request):
     return render(request,'core/support.html')
