@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.utils import timezone
-
+from django.core.paginator import Paginator
 from core.models import User
 from .models import Transfer
 
@@ -103,4 +103,26 @@ def transfer(request):
 
     return render(request, 'transfers/transfer.html', {
         'data_options': data_options
+    })
+
+@login_required
+def history(request):
+
+    user = request.user
+
+    transactions = Transfer.objects.filter(
+        sender=user
+    ) | Transfer.objects.filter(
+        receiver=user
+    )
+
+    transactions = transactions.order_by('-created_at')
+
+    paginator = Paginator(transactions, 10)
+    page = request.GET.get('page')
+
+    transactions = paginator.get_page(page)
+
+    return render(request, "transfers/history.html", {
+        "transactions": transactions
     })

@@ -71,23 +71,39 @@
                             <label class="text-sm font-medium flex">Mobile Number</label>
                             <input type="tel" name="mobile" pattern="[0-9]{10}" name="mobile" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
                         </div>
-                        <div>
+                        <div class="relative">
                             <label class="text-sm font-medium">Password</label>
-                            <input type="password" name="password" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                            <input type="password" id="password" name="password"
+                            class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <span onclick="togglePassword('password')" 
+                            class="absolute right-3 top-9 cursor-pointer text-gray-500">
+                                <i class="fa-regular fa-eye"></i>
+                            </span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Password must be 8+ characters, include uppercase, lowercase, number & special character
+                            </p>
                         </div>
-                        <div>
+                        <div class="relative">
                             <label class="text-sm font-medium">Confirm Password</label>
-                            <input type="password" name="confirm_password" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                            <input type="password" id="confirm_password" name="confirm_password"
+                            class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <span onclick="togglePassword('confirm_password')" 
+                            class="absolute right-3 top-9 cursor-pointer text-gray-500">
+                                <i class="fa-regular fa-eye"></i>
+                            </span>
                         </div>
                     </div>
                     <div class="flex items-center text-sm">
-                            <input type="checkbox" class="mr-2"> I agree to the
+                            <input type="checkbox" id="terms" name="terms" class="mr-2" required> I agree to the
                             <a onclick="openModal('termsModal')" class="text-blue-600 mx-1 hover:underline">Terms of Service</a>
                             and 
                             <a onclick="openModal('privacyModal')" class="text-blue-600 mx-1 hover:underline">Privacy Policy</a>
                         </div>
                         <div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition">Create Account</button>
+                        <button type="submit" id="signupBtn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition disabled:opacity-50" disabled>
+                            Create Account
+                        </button>
                 </form>
             </div>
         </div>
@@ -263,6 +279,25 @@
   </div>
 </div>
 
+<!-- Password -->
+<script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    field.type = field.type === "password" ? "text" : "password";
+}
+</script>
+
+<!-- Terms and services & privacy policy checked -->
+<script>
+const checkbox = document.getElementById("terms");
+const button = document.getElementById("signupBtn");
+
+checkbox.addEventListener("change", function() {
+    button.disabled = !this.checked;
+});
+</script>
+
+<!-- Terms and services & privacy policy -->
 <script>
 
 function openModal(modalId){

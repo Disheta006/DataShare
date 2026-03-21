@@ -9,11 +9,32 @@ from .models import OTPVerification, User
 from django_ratelimit.decorators import ratelimit
 from django.contrib.auth.decorators import login_required
 from transfers.models import Transfer
-from django.utils import timezone
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+import random
+import re
 
 # Create your views here.
 def home(request):
     return render(request,'core/home.html')
+
+def is_strong_password(password):
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least 1 uppercase letter"
+
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least 1 lowercase letter"
+
+    if not re.search(r"[0-9]", password):
+        return False, "Password must contain at least 1 number"
+
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least 1 special character"
+
+    return True, ""
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def signup(request):
@@ -26,14 +47,39 @@ def signup(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
 
+        if not all([first_name, last_name, mobile, password, confirm_password]):
+            messages.error(request, "All fields are required")
+            return redirect("signup")
+
         if password != confirm_password:
             messages.error(request, "Passwords do not match")
+            return redirect("signup")
+        
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            messages.error(request, e.messages[0])
+            return redirect("signup")
+
+        is_valid, error_message = is_strong_password(password)
+        if not is_valid:
+            messages.error(request, error_message)
             return redirect("signup")
 
         if User.objects.filter(mobile=mobile).exists():
             messages.error(request, "Mobile number already registered")
             return redirect("signup")
         
+        if not mobile.isdigit() or len(mobile) < 10:
+            messages.error(request, "Enter a valid mobile number")
+            return redirect("signup")
+        
+        terms = request.POST.get("terms")
+
+        if not terms:
+            messages.error(request, "You must accept Terms & Privacy Policy")
+            return redirect("signup")
+
         OTPVerification.objects.filter(mobile=mobile).delete()
 
         otp = str(random.randint(100000,999999))
@@ -122,10 +168,12 @@ def verify_code(request):
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def login(request):
+
     if request.method == "POST":
 
         mobile = request.POST.get("mobile")
         password = request.POST.get("password")
+        remember = request.POST.get("remember")
 
         user = authenticate(request, mobile=mobile, password=password)
 
@@ -133,11 +181,12 @@ def login(request):
 
             auth_login(request, user)
 
-            # remember me logic
-            if request.POST.get("remember") != "on":
+            if remember == "on":
+                # Persist session (2 weeks or whatever SESSION_COOKIE_AGE is)
+                request.session.set_expiry(1209600)
+            else:
+                # Expire when browser closes
                 request.session.set_expiry(0)
-
-            messages.success(request, "Logged in successfully")
 
             return redirect("dashboard")
 

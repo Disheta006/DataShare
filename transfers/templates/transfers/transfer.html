@@ -10,12 +10,14 @@
         </div>
         <nav class="hidden md:flex items-center space-x-8 text-gray-600 font-medium">
             <a href="{% url 'dashboard' %}" class="hover:text-blue-600 transition">Dashboard</a>
+            <a href="{% url 'history' %}" class="hover:text-blue-600 transition">View All Transactions</a>
             <a href="{% url 'home' %}" class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition">Home <i class="fa-solid fa-arrow-right-long"></i></a>
         </nav>
         <button id="menu_btn" class="md:hidden text-2xl text-black  "><i class="fa-solid fa-bars"></i></button>
     </div>
     <div id="mobile_menu" class="hidden md:hidden px-6 pb-4 space-y-3 bg-white">
         <a href="{% url 'dashboard' %}" class="block text-gray-600">Dashboard</a>
+        <a href="{% url 'history' %}" class="block text-gray-600">View All Transactions</a>
         <a href="{% url 'home' %}" class="block bg-blue-600 text-white px-4 py-2 rounded-lg text-center">Home</a>
     </div>
 </header>
@@ -25,78 +27,52 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800">New Transfer</h1>
         </div>
         <p class="text-gray-500 mb-8">Fill in the details below to complete your data transfer.</p>
-
+        {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-3 rounded-lg text-sm 
+                    {% if message.tags == 'error' %}
+                    bg-red-100 text-red-700
+                    {% elif message.tags == 'success' %}
+                    bg-green-100 text-green-700
+                    {% else %}
+                    bg-blue-100 text-blue-700
+                    {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+        {% endif %}
         <form method="post" class="space-y-6">
             {% csrf_token %}
-                <div class="bg-white p-6 rounded-2xl shadow">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-blue-600"><i class="fa-solid fa-circle text-blue-600 text-sm"></i> Sender Information</h2>
-                        <span class="text-xs text-black bg-gray-100 px-3 py-1 rounded-full">FROM</span>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm mb-1">Mobile Number *</label>
-                            <input type="text" name="sender_number" placeholder="+91 9876543210" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1">Display Name (Optional)</label>
-                            <input type="text" name="sender_name" placeholder="John Doe" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center mt-4 mb-4">
-                        <h2 class="text-lg font-semibold text-orange-600"><i class="fa-solid fa-circle text-orange-600 text-sm"></i> Receiver Information</h2>
-                        <span class="text-xs text-black bg-gray-100 px-3 py-1 rounded-full">TO</span>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm mb-1">Mobile Number *</label>
-                            <input type="text" name="receiver_number" placeholder="+91 9123456780" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-400 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm mb-1">Display Name (Optional)</label>
-                            <input type="text" name="receiver_name" placeholder="Jane Smith" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-400 outline-none">
-                        </div>
-                    </div>
-                
-                    <div class="flex justify-between items-center mt-4 mb-4">
-                        <h2 class="text-lg font-semibold text-black-500"><i class="fa-solid fa-circle"></i> Data Amount</h2>
-                        <span class="text-xs bg-gray-100 px-3 py-1 rounded-full">SELECT</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-4">
-                        {% for amount in data_options %}
-                            <button type="button" class="border rounded-xl py-3 text-sm font-medium hover:bg-blue-100 transition">{{ amount }}</button>
-                        {% endfor %}
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input type="number" name="customer_amount" placeholder="Enter custom amount" class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 outline-none">
-                        <span class="text-gray-500">MB</span>
-                    </div>
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold text-gray-800">Transfer Data</h1>
+            </div>
+            <div class="bg-linear-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow">
+                <p class="text-sm opacity-80">Your Balance</p>
+                <p class="text-3xl font-bold">{{ request.user.data_balance }} MB</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow">
+                <h2 class="font-semibold mb-4">Receiver Details</h2>
+                <input type="text" name="receiver_number"
+               placeholder="Enter receiver mobile"
+               class="w-full border rounded-lg px-4 py-2 mb-4">
+                <h2 class="font-semibold mt-4 mb-4">Select Amount</h2>
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    {% for amount in data_options %}
+                    <button type="button"
+                    class="amount-btn border rounded-lg py-2 hover:bg-blue-100">
+                        {{ amount }}
+                    </button>
+                    {% endfor %}
                 </div>
-
-                <div class="bg-gray-50 p-6 rounded-2xl shadow">
-                    <h2>Transfer Summary</h2>
-                    <div class="space-y-2 text-sm text-gray-600">
-                        <div class="flex justify-between">
-                            <span>From</span>
-                            <span>--</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>To</span>
-                            <span>--</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Amount</span>
-                            <span>--</span>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-blue-500 text-white hover:bg-blue-600 font-semibold py-3 rounded-xl transition duration-300">Execute Transfer</button>
-
+                <input type="number" name="customer_amount"
+               placeholder="Or enter custom amount"
+               class="w-full border rounded-lg px-4 py-2">
+            </div>
+            <button type="submit"
+            class="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700">
+                Execute Transfer 🚀
+            </button>
         </form>
-
     </div>
     <footer class="text-center text-sm text-gray-500 mt-8">
             Need help in transferring data? 

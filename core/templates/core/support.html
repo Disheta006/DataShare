@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 
 <header class="bg-white shadow-sm sticky top-0 z-50">
@@ -34,22 +35,31 @@
             <div class="text-4xl mb-4">📧</div>
             <h3 class="text-xl font-semibold mb-2">Email Support</h3>
             <p class="text-gray-500 text-sm mb-4">Send us a message and we'll respond within 24 hours</p>
-            <p class="text-blue-600 font-medium mb-4">support@datashare.com</p>
-            <button class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200">Send Message →</button>
+            <p class="text-blue-600 font-medium mb-4">pradipkumarolli136@gmail.com</p>
+            <a href="mailto:pradipkumarolli136@gmail.com?subject=Support Request&body=Hi DataShare Team,"
+   class="inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200">
+   Send Message →
+</a>
         </div>
         <div class="bg-white p-8 rounded-xl shadow hover:shadow-lg text-center">
             <div class="text-4xl mb-4">📚</div>
             <h3 class="text-xl font-semibold mb-2">Help Center</h3>
             <p class="text-gray-500 text-sm mb-4">Browse our guides and tutorials to quickly solve common issues</p>
             <p class="text-blue-600 font-medium mb-4">Knowledge Base</p>
-            <button class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200">View Guides →</button>
+            <button id="openGuide"
+            class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200">
+                View Guides →
+            </button>
         </div>
         <div class="bg-white p-8 rounded-xl shadow hover:shadow-lg text-center">
             <div class="text-4xl mb-4">💬</div>
             <h3 class="text-xl font-semibold mb-2">WhatsApp Support</h3>
             <p class="text-gray-500 text-sm mb-4">Chat with our support team directly on WhatsApp</p>
-            <p class="text-blue-600 font-medium mb-4">+91 98765 43210</p>
-            <button class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200">Chat on WhatsApp →</button>
+            <p class="text-blue-600 font-medium mb-4">+91 77998 67785</p>
+            <a href="https://wa.me/7799867785?text=Hi%20I%20need%20help%20with%20DataShare" target="_blank"
+            class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 inline-block">
+                Chat on WhatsApp →
+            </a>
         </div>
     </section>
 
@@ -168,6 +178,53 @@
         </div>
     </section>
 </div>
+
+<!-- User Guide popup-->
+ <div id="guideModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4">
+    
+    <div class="bg-white rounded-2xl shadow-xl max-w-5xl w-full relative overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+            <h2 class="text-xl font-semibold">User Guide</h2>
+            <button id="closeGuide" class="text-2xl text-gray-600 hover:text-black">&times;</button>
+        </div>
+
+        <!-- Image Container (Scrollable) -->
+        <div class="max-h-[80vh] overflow-y-auto">
+            <img src="{% static 'assets/user_guide.png' %}" 
+                 alt="User Guide" 
+                 class="w-full rounded-lg hover:scale-105 transition duration-300">
+        </div>
+
+    </div>
+</div>
+
+<!-- User Guide -->
+<script>
+    const openGuide = document.getElementById('openGuide');
+    const guideModal = document.getElementById('guideModal');
+    const closeGuide = document.getElementById('closeGuide');
+
+    openGuide.addEventListener('click', () => {
+        guideModal.classList.remove('hidden');
+        guideModal.classList.add('flex');
+        document.body.style.overflow = 'hidden'; // prevent background scroll
+    });
+
+    closeGuide.addEventListener('click', () => {
+        guideModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    });
+
+    // Close when clicking outside
+    guideModal.addEventListener('click', (e) => {
+        if (e.target === guideModal) {
+            guideModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    });
+</script>
 
 <!-- Menu btn -->
  <script>

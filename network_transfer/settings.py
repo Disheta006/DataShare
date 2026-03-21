@@ -149,8 +149,13 @@ AUTH_PASSWORD_VALIDATORS = [
 },
 ]
 
-SESSION_COOKIE_AGE = 3600
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  
+CSRF_COOKIE_SECURE = False  
+SESSION_SAVE_EVERY_REQUEST = True
 
 CACHES = {
     "default": {
@@ -166,4 +171,11 @@ AUTHENTICATION_BACKENDS = [
 
 # Remove during deployment
 RATELIMIT_ENABLE = False
-SILENCED_SYSTEM_CHECKS = ["django_ratelimit.E003", "django_ratelimit.W001"]   
+SILENCED_SYSTEM_CHECKS = ["django_ratelimit.E003", "django_ratelimit.W001"]
+
+DEBUG = True    # Turn False when depoly in real time                  
+DEMO_MODE = True  # Turn False when depoly in real time
+
+OTP_EXPIRY_TIME = 300        # 5 minutes
+OTP_RESEND_COOLDOWN = 30     # 30 seconds
+OTP_MAX_ATTEMPTS = 5         # max verification attempts
