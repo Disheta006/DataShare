@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include
 from django.urls import path
-from core.views import dashboard, home, signup, login, forget_password, verify_code, reset_password, support, verify_reset_otp
+from core.views import dashboard, home, resend_otp, resend_reset_otp, signup, login, forget_password, verify_code, reset_password, support, verify_reset_otp, user_logout
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
@@ -28,7 +28,10 @@ urlpatterns = [
     path('forget_password/',forget_password,name='forget_password'),
     path('verify_reset_otp/',verify_reset_otp , name='verify_reset_otp'),
     path('reset_password',reset_password,name='reset_password'),
+    path('resend-otp/', resend_otp, name='resend_otp'),
+    path('resend-reset-otp/', resend_reset_otp, name='resend_reset_otp'),
     path('transfer/', include('transfers.urls')),
     path('dashboard/', dashboard, name='dashboard'),
     path('support',support,name='support'),
+    path("logout/", user_logout, name="logout"),
 ]

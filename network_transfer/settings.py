@@ -132,6 +132,8 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR/'staticfiles'
 
+LOGIN_URL = 'login'
+
 AUTH_USER_MODEL = 'core.User'
 
 AUTH_PASSWORD_VALIDATORS = [

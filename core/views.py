@@ -1,6 +1,5 @@
-import random
 from django.shortcuts import render, redirect
-from django.db import transaction
+from django.contrib.auth import logout
 from django.contrib import messages
 from .models import OTPVerification
 from django.contrib.auth import login as auth_login
@@ -11,6 +10,8 @@ from django.contrib.auth.decorators import login_required
 from transfers.models import Transfer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+import time
+from django.conf import settings
 import random
 import re
 
@@ -35,6 +36,11 @@ def is_strong_password(password):
         return False, "Password must contain at least 1 special character"
 
     return True, ""
+
+def user_logout(request):
+    logout(request)  # clears session + user data
+    messages.success(request, "You have been logged out successfully.")
+    return redirect("login")  # redirect to login page
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def signup(request):
@@ -80,33 +86,40 @@ def signup(request):
             messages.error(request, "You must accept Terms & Privacy Policy")
             return redirect("signup")
 
+        # Delete old OTP
         OTPVerification.objects.filter(mobile=mobile).delete()
 
-        otp = str(random.randint(100000,999999))
+        otp = str(random.randint(100000, 999999))
 
         OTPVerification.objects.create(
             mobile=mobile,
             otp=otp
         )
 
-        # store user data temporarily
+        # Store user data
         request.session['signup_data'] = {
-            "first_name": first_name,
-            "last_name": last_name,
-            "mobile": mobile,
-            "password": password
+        "first_name": first_name,
+        "last_name": last_name,
+        "mobile": mobile,
+        "password": password
         }
 
+        # 🔐 OTP controls
         request.session['otp_attempts'] = 0
-        print("OTP:", otp)  # replace with SMS API later
+        request.session['otp_time'] = time.time()
+        request.session['otp_last_sent'] = time.time()
+
+        print(f"OTP for {mobile}: {otp}")
+
+        # ✅ Pass OTP in demo mode
+        if settings.DEBUG or settings.DEMO_MODE:
+            request.session['otp_debug'] = otp
 
         return redirect("verify_code")
 
     return render(request,"core/signup.html")
 
-# OTP VERIFICATION VIEW
 def verify_code(request):
-
     signup_data = request.session.get("signup_data")
 
     if not signup_data:
@@ -115,31 +128,35 @@ def verify_code(request):
 
     mobile = signup_data["mobile"]
 
+    context = {}
+
+    # ✅ Show OTP in demo mode
+    if settings.DEBUG or settings.DEMO_MODE:
+        context['otp_debug'] = request.session.get('otp_debug')
+
     if request.method == "POST":
-
-        entered_otp = request.POST.get("otp").strip()
-
-        otp_record = OTPVerification.objects.filter(mobile=mobile).last()
-        # Debugging
         entered_otp = request.POST.get("otp").strip()
 
         otp_record = OTPVerification.objects.filter(mobile=mobile).last()
 
-        print("Entered OTP:", entered_otp)
-
-        # 🔴 Check if OTP exists
         if not otp_record:
             messages.error(request, "OTP not found. Please signup again.")
             return redirect("signup")
-        print("DB OTP:", otp_record.otp)
 
-        # 🔴 Check expiry
-        if otp_record.is_expired():
-            messages.error(request, "OTP expired.")
+        # ⛔ Expiry check (DB + session safety)
+        if otp_record.is_expired() or time.time() - request.session.get("otp_time", 0) > settings.OTP_EXPIRY_TIME:
             otp_record.delete()
+            messages.error(request, "OTP expired.")
             return redirect("signup")
 
-        # 🔴 Validate OTP
+        # ⛔ Attempt limit
+        attempts = request.session.get("otp_attempts", 0)
+        if attempts >= settings.OTP_MAX_ATTEMPTS:
+            otp_record.delete()
+            messages.error(request, "Too many attempts. Try again.")
+            return redirect("signup")
+
+        # ✅ Correct OTP
         if str(otp_record.otp) == str(entered_otp):
 
             user = User.objects.create_user(
@@ -149,22 +166,64 @@ def verify_code(request):
                 password=signup_data["password"]
             )
 
-            # delete OTP after success
             otp_record.delete()
 
-            # clear session
-            request.session.pop("signup_data", None)
+            # Clear session safely
+            for key in ["signup_data", "otp_attempts", "otp_time", "otp_debug"]:
+                request.session.pop(key, None)
 
             auth_login(request, user)
 
             messages.success(request, "Account created successfully")
-
             return redirect("login")
 
-        else:
-            messages.error(request, "Invalid OTP")
+        # ❌ Wrong OTP
+        request.session["otp_attempts"] = attempts + 1
+        messages.error(request, "Invalid OTP")
 
-    return render(request, "core/verify_code.html")
+    return render(request, "core/verify_code.html", context)
+
+def resend_otp(request):
+    import time
+    from django.conf import settings
+
+    signup_data = request.session.get("signup_data")
+
+    if not signup_data:
+        messages.error(request, "Session expired")
+        return redirect("signup")
+
+    mobile = signup_data["mobile"]
+
+    last_sent = request.session.get("otp_last_sent")
+
+    # ⛔ Cooldown
+    if last_sent and time.time() - last_sent < settings.OTP_RESEND_COOLDOWN:
+        messages.error(request, "Please wait before requesting another OTP")
+        return redirect("verify_code")
+
+    # Generate new OTP
+    otp = str(random.randint(100000, 999999))
+
+    OTPVerification.objects.filter(mobile=mobile).delete()
+
+    OTPVerification.objects.create(
+        mobile=mobile,
+        otp=otp
+    )
+
+    request.session['otp_time'] = time.time()
+    request.session['otp_last_sent'] = time.time()
+    request.session['otp_attempts'] = 0
+
+    print(f"Resent OTP for {mobile}: {otp}")
+
+    if settings.DEBUG or settings.DEMO_MODE:
+        request.session['otp_debug'] = otp
+
+    messages.success(request, "OTP resent successfully")
+
+    return redirect("verify_code")
 
 @ratelimit(key='ip', rate='5/m', block=True)
 def login(request):
@@ -221,22 +280,34 @@ def forget_password(request):
         request.session['reset_mobile'] = mobile
         request.session['reset_otp_attempts'] = 0
 
-        print("RESET OTP:", otp)  # Replace with SMS API
+        # ✅ ADD THESE
+        request.session['reset_otp_time'] = time.time()
+        request.session['reset_otp_last_sent'] = time.time()
+
+        print(f"RESET OTP: {otp}")    # Replace this with SMS API later
+
+        # ✅ Demo mode
+        if settings.DEBUG or settings.DEMO_MODE:
+            request.session['reset_otp_debug'] = otp
 
         return redirect("verify_reset_otp")
 
     return render(request, "core/forget_password.html")
 
 def verify_reset_otp(request):
-
     mobile = request.session.get("reset_mobile")
 
     if not mobile:
         messages.error(request, "Session expired. Try again.")
         return redirect("forget_password")
 
-    if request.method == "POST":
+    context = {}
 
+    # ✅ Demo OTP display
+    if settings.DEBUG or settings.DEMO_MODE:
+        context['otp_debug'] = request.session.get('reset_otp_debug')
+
+    if request.method == "POST":
         entered_otp = request.POST.get("otp").strip()
 
         otp_record = OTPVerification.objects.filter(mobile=mobile).last()
@@ -246,27 +317,30 @@ def verify_reset_otp(request):
             messages.error(request, "Invalid request. Try again.")
             return redirect("forget_password")
 
-        # 🔴 Check expiry
-        if otp_record.is_expired():
+        # ⛔ Expiry check (DB + session)
+        if otp_record.is_expired() or time.time() - request.session.get("reset_otp_time", 0) > settings.OTP_EXPIRY_TIME:
             otp_record.delete()
             messages.error(request, "OTP expired")
             return redirect("forget_password")
 
-        # 🔴 Attempt limiting
+        # ⛔ Attempt limiting
         attempts = request.session.get("reset_otp_attempts", 0)
 
-        if attempts >= 5:
+        if attempts >= settings.OTP_MAX_ATTEMPTS:
             otp_record.delete()
             messages.error(request, "Too many attempts. Try again.")
             return redirect("forget_password")
 
-        # 🔴 Validate OTP
+        # ✅ Validate OTP
         if str(otp_record.otp) == str(entered_otp):
 
-            # success → allow password reset
             request.session['otp_verified'] = True
 
             otp_record.delete()
+
+            # Clean session (important)
+            for key in ["reset_otp_attempts", "reset_otp_time", "reset_otp_debug"]:
+                request.session.pop(key, None)
 
             return redirect("reset_password")
 
@@ -274,7 +348,7 @@ def verify_reset_otp(request):
             request.session['reset_otp_attempts'] = attempts + 1
             messages.error(request, "Invalid OTP")
 
-    return render(request, "core/verify_reset_otp.html")
+    return render(request, "core/verify_reset_otp.html", context)
 
 def reset_password(request):
 
@@ -314,6 +388,43 @@ def reset_password(request):
         return redirect("login")
 
     return render(request, "core/reset_password.html")
+
+def resend_reset_otp(request):
+
+    mobile = request.session.get("reset_mobile")
+
+    if not mobile:
+        messages.error(request, "Session expired")
+        return redirect("forget_password")
+
+    last_sent = request.session.get("reset_otp_last_sent")
+
+    # ⛔ Cooldown
+    if last_sent and time.time() - last_sent < settings.OTP_RESEND_COOLDOWN:
+        messages.error(request, "Please wait before requesting another OTP")
+        return redirect("verify_reset_otp")
+
+    otp = str(random.randint(100000, 999999))
+
+    OTPVerification.objects.filter(mobile=mobile).delete()
+
+    OTPVerification.objects.create(
+        mobile=mobile,
+        otp=otp
+    )
+
+    request.session['reset_otp_time'] = time.time()
+    request.session['reset_otp_last_sent'] = time.time()
+    request.session['reset_otp_attempts'] = 0
+
+    print(f"Resent RESET OTP for {mobile}: {otp}")
+
+    if settings.DEBUG or settings.DEMO_MODE:
+        request.session['reset_otp_debug'] = otp
+
+    messages.success(request, "OTP resent successfully")
+
+    return redirect("verify_reset_otp")
 
 @login_required
 def dashboard(request):
