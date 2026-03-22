@@ -1,7 +1,7 @@
-📦 DataShareApp (Prototype)
+📦 #DataShareApp (Prototype)
 A Django-based web application that simulates a data transfer system, allowing users to sign up, log in, and transfer data between accounts. This project is built as a prototype/demo to showcase authentication workflows, UI design, and basic transaction handling.
 
-🚀 Features
+🚀 ##Features
 🔐 User Authentication (Signup/Login/Logout)
 📱 Mobile-based OTP Verification
 🔑 Forgot Password with OTP Reset
@@ -10,13 +10,13 @@ A Django-based web application that simulates a data transfer system, allowing u
 📜 Transaction History (basic implementation)
 🎨 Responsive UI (Tailwind CSS-based)
 
-🛠️ Tech Stack
+🛠️ ##Tech Stack
 Backend: Django (Python)
 Frontend: HTML, Tailwind CSS, JavaScript
 Database: SQLite (default Django DB)
 Authentication: Custom logic with OTP verification
 
-⚙️ Installation & Setup
+⚙️ ##Installation & Setup
 1. Clone and repository:
    git clone https://github.com/your-username/DataShareApp.git
    cd DataShareApp
@@ -31,14 +31,15 @@ Authentication: Custom logic with OTP verification
     python manage.py runserver
 6. Open in browser:
     http://127.0.0.1:8000/
-🧪 How to Use
+   
+🧪 ##How to Use
 Register using mobile number
 Verify OTP
 Login to dashboard
 Perform data transfer
 View transaction history
 
-⚠️ Disclaimer
+⚠️ ##Disclaimer
 
 🚨 This project is strictly a prototype/demo application.
 
@@ -50,7 +51,7 @@ Sensitive operations are production-grade
 This project should only be used for:
 Demonstrations
 
-📌 Future Improvements
+📌 ##Future Improvements
 Proper API-based OTP service (Twilio/Firebase)
 Secure authentication (JWT/OAuth)
 Real transaction handling logic
@@ -58,5 +59,5 @@ Database optimization
 Deployment-ready configuration
 Role-based access control
 
-👩‍💻 Author
+👩‍💻 ##Author
 Developed as a prototype project for demonstration purposes.
