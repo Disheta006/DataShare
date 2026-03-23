@@ -19,7 +19,7 @@ A Django-based web application that simulates a data transfer system, allowing u
 ## ⚙️ Installation & Setup
 1. **Clone and repository**:
 
-   git clone https://github.com/your-username/DataShareApp.git
+   git clone https://github.com/Disheta006/DataShare.git
    
    cd DataShareApp
 2. **Create virtual environment**:
@@ -76,3 +76,5 @@ Demonstrations
 - **GitHub**: Disheta006
 
 Developed as a prototype project for demonstration purposes.
+
+
