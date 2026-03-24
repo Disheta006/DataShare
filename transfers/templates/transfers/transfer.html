@@ -11,7 +11,6 @@
         <nav class="hidden md:flex items-center space-x-8 text-gray-600 font-medium">
             <a href="{% url 'dashboard' %}" class="hover:text-blue-600 transition">Dashboard</a>
             <a href="{% url 'history' %}" class="hover:text-blue-600 transition">View All Transactions</a>
-            <a href="{% url 'home' %}" class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition">Home</a>
             <form method="POST" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button class="w-full text-left px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-700 transition">
